@@ -39,9 +39,9 @@ class LoginPage(tk.Frame):
         self.attempt_count = 1
         
         logo = tk.PhotoImage(file="logo.png")
-        BGlabel = tk.Label(self,image=logo)
-        BGlabel.image = logo
-        BGlabel.place(x=0,y=0,width=285,height=250)        
+        LogoImage = tk.Label(self,image=logo)
+        LogoImage.image = logo
+        LogoImage.place(x=0,y=0,width=285,height=250)        
         config = StaticConfigParser()
         
         self.master_password = config.get('LOGIN', 'master_password')
@@ -77,9 +77,9 @@ class StartPage(tk.Frame):
         
         
         logo = tk.PhotoImage(file="logo.png")
-        BGlabel = tk.Label(self,image=logo)
-        BGlabel.image = logo
-        BGlabel.place(x=0,y=0,width=285,height=250)
+        LogoImage = tk.Label(self,image=logo)
+        LogoImage.image = logo
+        LogoImage.place(x=0,y=0,width=285,height=250)
 
         new_account = tk.Button(self, text="Add new account", 
                         command=lambda: controller.show_frame('Page1'))
@@ -111,9 +111,9 @@ class Page1(tk.Frame):
         canvas = tk.Canvas(self,width=200, height=200)
         canvas.pack()
         logo = tk.PhotoImage(file="logo.png")
-        BGlabel = tk.Label(self,image=logo)
-        BGlabel.image = logo
-        BGlabel.place(x=0,y=0,width=285,height=250)
+        LogoImage = tk.Label(self,image=logo)
+        LogoImage.image = logo
+        LogoImage.place(x=0,y=0,width=285,height=250)
 
 
         website = ttk.Label(self, text="    Website")
@@ -167,9 +167,9 @@ class Page2(tk.Frame):
         canvas = tk.Canvas(self,width=200, height=200)
         canvas.pack()
         logo = tk.PhotoImage(file="logo.png")
-        BGlabel = tk.Label(self,image=logo)
-        BGlabel.image = logo
-        BGlabel.place(x=0,y=0,width=285,height=250)
+        LogoImage = tk.Label(self,image=logo)
+        LogoImage.image = logo
+        LogoImage.place(x=0,y=0,width=285,height=250)
 
         website = ttk.Label(self, text="    Website")
         website.pack(anchor='w')

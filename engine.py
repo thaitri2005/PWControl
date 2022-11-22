@@ -2,6 +2,7 @@ from os import urandom
 import string 
 from static_config_parser import StaticConfigParser
 import json
+from encryption import EncryptPassword, DecryptPassword
 size = 10
 special_characters ="!\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
 
@@ -69,7 +70,7 @@ def save_pass(username, website, password=''):
     '''
     Used to save passwords into the data file
     '''
-    acc = Account(str(username), str(website), str(password))
+    acc = Account(str(username), str(website), EncryptPassword(str(password)))
     new_data = {
     acc.website+' '+acc.username:acc.password}
     try:
@@ -95,7 +96,7 @@ def get_pass(username, website):
     with open("data.json") as data_file:
         data = json.load(data_file)        
         if website+' '+username in data:        
-            return data[website+' '+username]
+            return DecryptPassword(data[website+' '+username])
 
 def ChangeMainPass(newMP):
     #Get the LOGIN section
