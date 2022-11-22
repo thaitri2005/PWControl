@@ -7,8 +7,6 @@ from static_config_parser import StaticConfigParser
 config = StaticConfigParser()
 KEY = config.get('KEY', 'key')
 
-
-
 class AESCipher(object):
 
     def __init__(self, key): 
@@ -41,5 +39,3 @@ def EncryptPassword(plain_text):
 def DecryptPassword(encrypted_text):
     MSG = AESCipher(KEY)
     return MSG.decrypt(str.encode(encrypted_text))
-    
-

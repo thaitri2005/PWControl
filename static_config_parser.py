@@ -1,11 +1,8 @@
 import configparser
 
-"""A static config parser"""
-
 class StaticConfigParser():
     config_file_path = 'config.ini'
     config = configparser.ConfigParser()
-
     try:
         with open(config_file_path) as f:
             config.read(config_file_path)

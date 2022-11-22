@@ -11,35 +11,33 @@ lower_case_characters = string.ascii_lowercase
 digit_characters = string.digits
 
 class Account(object):
-    def __init__(self, username, website, password=''):
+    def __init__(self, username, service, password=''):
         '''
         Initializes an Account object
 
-        website (string): the website where the account is signed up
+        service (string): the service where the account is signed up
         an Account object has three attribute:
-            self.website (string, determined by input text)
+            self.service (string, determined by input text)
             self.username (string, determined by input text)
             self.password (string, generated) through the randomizer
-        If the website is invalid, attempt to fix or raise a ValueError
+        If the website service contains unnecessary parts, attempt to remove them
         '''
-        self.website = website.strip().replace('https://','')
+        self.service = service.strip().replace('https://','')
         self.username = username
         self.password = password
             
     @property
     def password(self):
         '''
-        return the account's password
+        Return the account's password
         '''
         return self._password    
-
     @property
     def username(self):
         '''
         return the account's username
         '''
         return str(self._username)
-
 
     @username.setter
     def username(self, username):
@@ -54,17 +52,21 @@ class Account(object):
     @password.setter
     def password(self, password):
         '''
-        If the password is blank, generate a password
+        If the password is blank, generate a random password
         '''   
         password = password.strip()     
         if password == "":
-            self._password = pw_gen()
+            self._password = GenerateSecurePassword()
         else:
             self._password = password
         
-def pw_gen():
+def GenerateSecurePassword():
     '''
-    Generate a string of password that contains at least one special character, one uppercase character, one lowercase character, and one digit
+    Generate a string of password that contains:
+        at least one special character
+        at least one uppercase character
+        at least one lowercase character
+        at least one digit
     '''
     chars = special_characters+upper_case_characters+lower_case_characters+digit_characters
     MeetExpectation = False
@@ -87,47 +89,36 @@ def pw_gen():
             MeetExpectation = True
     return password
     
-
-def save_pass(username, website, password=''):
+def SavePassword(username, service, password=''):
     '''
     Used to save passwords into the data file
     '''
-    acc = Account(str(username), str(website), EncryptPassword(str(password)))
+    acc = Account(str(username), str(service), EncryptPassword(str(password)))
     new_data = {
-    acc.website+' '+acc.username:acc.password}
+    acc.service+' '+acc.username:acc.password}
     try:
         with open("data.json", "r") as data_file:
-            # reading old data
             data = json.load(data_file)
     except FileNotFoundError:
         with open("data.json", "w") as data_file:
             json.dump(new_data, data_file, indent=4)
     else:
         data.update(new_data)
-
         with open("data.json", "w") as data_file:
             json.dump(data, data_file, indent=4)
-    
-
-        
-def get_pass(username, website):
+     
+def GetPassword(username, service):
     '''
     Used to get passwords from the data file
     '''
-
     with open("data.json") as data_file:
         data = json.load(data_file)        
-        if website+' '+username in data:        
-            return DecryptPassword(data[website+' '+username])
+        if service+' '+username in data:        
+            return DecryptPassword(data[service+' '+username])
 
-def ChangeMainPass(newMP):
-    #Get the LOGIN section
+def ChangeMasterPass(newMP):
     loginkey = StaticConfigParser.config["LOGIN"]
-
-    #Update the password
     loginkey["master_password"] = newMP
-
-    #Write changes back to file
     with open('config.ini', 'w') as conf:
         StaticConfigParser.config.write(conf)
         
