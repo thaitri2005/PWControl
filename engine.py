@@ -3,8 +3,12 @@ import string
 from static_config_parser import StaticConfigParser
 import json
 from encryption import EncryptPassword, DecryptPassword
+
 size = 10
 special_characters ="!\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
+upper_case_characters = string.ascii_uppercase
+lower_case_characters = string.ascii_lowercase
+digit_characters = string.digits
 
 class Account(object):
     def __init__(self, username, website, password=''):
@@ -60,11 +64,29 @@ class Account(object):
         
 def pw_gen():
     '''
-    generate a string of password
+    Generate a string of password that contains at least one special character, one uppercase character, one lowercase character, and one digit
     '''
-    chars = string.ascii_letters+string.digits+special_characters
-    from os import urandom
-    return "".join(chars[c % len(chars)] for c in urandom(size))
+    chars = special_characters+upper_case_characters+lower_case_characters+digit_characters
+    MeetExpectation = False
+    specialchars = 0
+    upperchars = 0
+    lowerchars = 0
+    digitchars = 0
+    while not MeetExpectation:
+        password =  "".join(chars[c % len(chars)] for c in urandom(size))
+        for character in password:
+            if character in special_characters:
+                specialchars +=1
+            elif character in upper_case_characters:
+                upperchars+=1
+            elif character in lower_case_characters:
+                lowerchars+=1
+            elif character in digit_characters:
+                digitchars +=1
+        if specialchars > 0 and upperchars > 0 and lowerchars > 0 and digitchars > 0:
+            MeetExpectation = True
+    return password
+    
 
 def save_pass(username, website, password=''):
     '''
@@ -86,7 +108,6 @@ def save_pass(username, website, password=''):
         with open("data.json", "w") as data_file:
             json.dump(data, data_file, indent=4)
     
-
         
 def get_pass(username, website):
     '''
