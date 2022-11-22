@@ -108,6 +108,7 @@ def save_pass(username, website, password=''):
         with open("data.json", "w") as data_file:
             json.dump(data, data_file, indent=4)
     
+
         
 def get_pass(username, website):
     '''

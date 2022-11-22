@@ -36,7 +36,7 @@ class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        self.attempt_count = 1
+        self.attempt_count = 0
         
         logo = tk.PhotoImage(file="logo.png")
         LogoImage = tk.Label(self,image=logo)
@@ -57,13 +57,13 @@ class LoginPage(tk.Frame):
     
     def login_button(self):
         password = self.login_entry.get()
-        if (password == self.master_password):
+        if password == self.master_password:
             self.controller.show_frame('StartPage')
-
-        self.incorrect_password_label = tk.Label(self, text=f"Incorrect password({self.attempt_count})", fg='red')
-        self.attempt_count += 1
-        self.incorrect_password_label.place(x=85,y=250)
-        self.login_entry.delete(0, 'end')
+        else:
+            self.attempt_count += 1
+            self.incorrect_password_label = tk.Label(self, text=f"Incorrect password({self.attempt_count})", fg='red')
+            self.incorrect_password_label.place(x=85,y=250)
+            self.login_entry.delete(0, 'end')
 
 class StartPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -90,6 +90,9 @@ class StartPage(tk.Frame):
         
         change_masterpass = tk.Button(self, text="Change Master Password", command = PassChangeButton)
         change_masterpass.place(x=70,y=320,width=150,height=30)
+        
+        logout = tk.Button(self, text="Logout", command = lambda: controller.show_frame('LoginPage'))
+        logout.place(x=70,y=360,width=150,height=30)
 
 
 
@@ -207,10 +210,13 @@ class Page2(tk.Frame):
         
         add_account_button.place(x=80,y=0)
      
-
-app = Application()
-app.geometry("280x420")
-app.resizable(False, False)  
-app.iconbitmap('logo.ico')
-app.title("PWControl")
-app.mainloop()
+def main():
+    app = Application()
+    app.geometry("280x420")
+    app.resizable(False, False)  
+    app.iconbitmap('logo.ico')
+    app.title("PWControl")
+    app.mainloop()
+    
+if __name__ == "__main__":
+    main()
