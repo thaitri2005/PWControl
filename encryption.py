@@ -2,9 +2,9 @@ from Crypto.Cipher import AES
 from Crypto import Random
 import base64
 import hashlib
-from static_config_parser import StaticConfigParser
+from config_parser import MainConfigParser
 
-config = StaticConfigParser()
+config = MainConfigParser()
 KEY = config.get('KEY', 'key')
 
 class AESCipher(object):
@@ -33,9 +33,25 @@ class AESCipher(object):
         return s[:-ord(s[len(s)-1:])]
     
 def EncryptPassword(plain_text):
+    '''
+    Encrypt the given string of password with AESCipher
+    Decode to string type for storing purpose
+    
+    plain_text: string
+    
+    Returns: string
+    '''
     MSG = AESCipher(KEY)
     return MSG.encrypt(plain_text).decode()
 
 def DecryptPassword(encrypted_text):
+    '''
+    Decrypt the string of previously encoded password with AESCipher.
+    Assumes encrypted_text was encrypted with the same key as the key provided for decryption
+    
+    encrypted_text: string
+    
+    Returns: string
+    '''
     MSG = AESCipher(KEY)
     return MSG.decrypt(str.encode(encrypted_text))
