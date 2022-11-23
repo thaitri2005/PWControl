@@ -126,7 +126,7 @@ def GenerateSecurePassword(size=SIZE):
     Returns: string
     '''
     chars = special_characters+upper_case_characters+lower_case_characters+digit_characters
-
+    password =''
     while not MeetRequirements(password):
         password =  "".join(chars[c % len(chars)] for c in urandom(size))
     return password
