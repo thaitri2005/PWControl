@@ -55,7 +55,7 @@ class Account(object):
     def GetPassword(self):
         '''
         Load and decrypt the password of the Account from the datafile 
-        Return None if the password is not found
+        Return None if the password or Account is not found
         
         DATAFILE: path to where the Account(with encrypted password) is saved
         
@@ -89,10 +89,10 @@ def MeetRequirements(password):
     '''
     Check if the password meetsthe standard requirements
     
-    Standard requirements: passwords must contains
-        at least one special character
-        at least one uppercase character
-        at least one lowercase character
+    Standard requirements: password must contains
+        at least one special character,
+        at least one uppercase character,
+        at least one lowercase character,
         at least one digit
         
     password: string
@@ -146,6 +146,24 @@ def ChangeMasterPass(newMP):
     with open('config.ini', 'w') as conf:
         MainConfigParser.config.write(conf)
         
+def GetAccountList(service):
+    '''
+    Get a list of accounts registered to a specific service in the data file
+    
+    service (string): the service entitled with the accounts
+    DATAFILE: path to where the Accounts(with encrypted password) are saved
+    
+    Returns: list
+    '''
+    account_list = []
+    with open(DATAFILE) as data_file:
+        data = json.load(data_file)
+        for key in list(data):
+            if service in str(key):
+                acc = str(key).replace(service,'').strip()
+                account_list.append(acc)
+    return account_list
+        
 def DeleteAllAccounts():
     '''
     Delete all accounts saved in the data file
@@ -159,7 +177,7 @@ def DeleteAllAccounts():
 
 def DeleteService(service):
     '''
-    Delete all accounts with a specific service in the data file
+    Delete all accounts registered to a specific service in the data file
     
     service (string): the service entitled with the accounts that will be deleted
     DATAFILE: path to where the Accounts(with encrypted password) are saved

@@ -1,13 +1,10 @@
 import tkinter as tk
-import os 
-import sys
 import pyperclip
 from config_parser import MainConfigParser
 from tkinter import ttk
 from tkinter import simpledialog 
 import engine
 
-os.chdir(sys.path[0])
 
 class PWControlApp(tk.Tk):
     def __init__(self, *args, **kwargs):
@@ -44,7 +41,7 @@ class LoginPage(tk.Frame):
         logo = tk.PhotoImage(file="logo.png")
         LogoImage = tk.Label(self,image=logo)
         LogoImage.image = logo
-        LogoImage.place(x=0,y=0,width=285,height=250)    
+        LogoImage.place(x=0,y=0,width=280,height=250)    
         #get the master password
         config = MainConfigParser()
         self.master_password = config.get('LOGIN', 'master_password')
@@ -55,7 +52,7 @@ class LoginPage(tk.Frame):
         self.masterpass_entry.place(x=140,y=233)
         
         self.LoginButton = tk.Button(self, text="Login",command=self.LoginButton)
-        self.LoginButton.place(x=70,y=280,width=150,height=30)
+        self.LoginButton.place(x=66,y=280,width=150,height=30)
     
     def LoginButton(self):
         '''
@@ -82,22 +79,22 @@ class MenuPage(tk.Frame):
         logo = tk.PhotoImage(file="logo.png")
         LogoImage = tk.Label(self,image=logo)
         LogoImage.image = logo
-        LogoImage.place(x=0,y=0,width=285,height=250)
+        LogoImage.place(x=0,y=0,width=280,height=250)
 
         add_account_button = tk.Button(self, text="Add Account", 
                         command=lambda: self.controller.ShowFrame('AddAccountPage'))
-        add_account_button.place(x=70,y=230,width=150,height=30)
+        add_account_button.place(x=66,y=230,width=150,height=30)
         
         load_account_button = tk.Button(self, text="Load Account", 
                         command=lambda: self.controller.ShowFrame('LoadAccountPage'))
-        load_account_button.place(x=70,y=270,width=150,height=30)
+        load_account_button.place(x=66,y=270,width=150,height=30)
         
         delete_account_button = tk.Button(self, text="Delete Account", 
                         command=lambda: self.controller.ShowFrame('DeleteAccountPage'))
-        delete_account_button.place(x=70,y=310,width=150,height=30)
+        delete_account_button.place(x=66,y=310,width=150,height=30)
         
         change_masterpass_button = tk.Button(self, text="Change Master Password", command = self.MasterPassChangeDialog)
-        change_masterpass_button.place(x=70,y=350,width=150,height=30)
+        change_masterpass_button.place(x=66,y=350,width=150,height=30)
         
     def MasterPassChangeDialog(self):
         '''
@@ -116,7 +113,7 @@ class AddAccountPage(tk.Frame):
         logo = tk.PhotoImage(file="logo.png")
         LogoImage = tk.Label(self,image=logo)
         LogoImage.image = logo
-        LogoImage.place(x=0,y=0,width=285,height=250)
+        LogoImage.place(x=0,y=0,width=280,height=250)
 
         ttk.Label(self, text="    Website/Service").pack(anchor='w')
 
@@ -226,7 +223,7 @@ class LoadAccountPage(tk.Frame):
         logo = tk.PhotoImage(file="logo.png")
         LogoImage = tk.Label(self,image=logo)
         LogoImage.image = logo
-        LogoImage.place(x=0,y=0,width=285,height=250)
+        LogoImage.place(x=0,y=0,width=280,height=250)
 
         ttk.Label(self, text="    Website/Service").pack(anchor='w')
 
@@ -239,12 +236,10 @@ class LoadAccountPage(tk.Frame):
         self.username_entry.pack()
 
 
-        ttk.Label(self, text="\n").pack()
+        ttk.Label(self, text="\n\n\n").pack()
 
         show_pass_button = tk.Button(self, text="Show Password", width=20, height=2, command = self.ShowPassword)
-        show_pass_button.pack()  
-        
-        ttk.Label(self, text="    Password").pack(anchor='w')
+        show_pass_button.place(x=66,y=295)
 
         self.password_field = ttk.Entry(self, width=32)        
         self.password_field.pack()
@@ -317,9 +312,8 @@ class LoadAccountPage(tk.Frame):
             if password == None:
                 tk.messagebox.showerror(title="Password Not Found", 
                         message="The account cannot be found in the database.")
-                
-            else:
             #if the password is found, show the user and copy it to the clipboard
+            else:
                 self.password_field.delete(0,tk.END)
                 self.password_field.insert(0,password)
                 pyperclip.copy(password)
@@ -333,7 +327,7 @@ class DeleteAccountPage(tk.Frame):
         logo = tk.PhotoImage(file="logo.png")
         LogoImage = tk.Label(self,image=logo)
         LogoImage.image = logo
-        LogoImage.place(x=0,y=0,width=285,height=250)
+        LogoImage.place(x=0,y=0,width=280,height=250)
 
         ttk.Label(self, text="    Website/Service").pack(anchor='w')
 
@@ -395,6 +389,7 @@ class DeleteAccountPage(tk.Frame):
         Delete an account with the typed in username and service
         
         Show error if not all the required fields are filled in.
+        Show error if the account does not exist in the database
         Ask the user to confirm their action of deleting the account.
         '''
         username = self.username_entry.get()
@@ -404,9 +399,15 @@ class DeleteAccountPage(tk.Frame):
                     message="Please fill in all the required fields")
         else:
             account = engine.Account(service, username)
-            if tk.messagebox.askokcancel(title="Account Deletion", 
-                    message="This account will be deleted from the database, do you wish to proceed?"):
-                account.DeleteAccount()
+            password = account.GetPassword()
+            #let the user know if there is no account in the database with the same service and username
+            if password == None:
+                tk.messagebox.showerror(title="Account Not Found", 
+                        message="The account cannot be found in the database.")
+            else:
+                if tk.messagebox.askokcancel(title="Account Deletion", 
+                        message="This account will be deleted from the database, do you wish to proceed?"):
+                    account.DeleteAccount()
             
      
 def main():
