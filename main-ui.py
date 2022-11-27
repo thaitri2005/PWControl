@@ -1,10 +1,9 @@
 import tkinter as tk
 import pyperclip
-from config_parser import MainConfigParser
+from config_parser import GetConfigPaster, ChangeConfigPasterValue
 from tkinter import ttk
 from tkinter import simpledialog 
 import engine
-
 
 class PWControlApp(tk.Tk):
     def __init__(self, *args, **kwargs):
@@ -17,7 +16,7 @@ class PWControlApp(tk.Tk):
 
         self.frames = {}
         
-        for F in (LoginPage, MenuPage, AddAccountPage, LoadAccountPage, DeleteAccountPage):
+        for F in (LoginPage, MenuPage, AddAccountPage, LoadAccountPage, DeleteAccountPage, SettingsPage):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
@@ -43,8 +42,8 @@ class LoginPage(tk.Frame):
         LogoImage.image = logo
         LogoImage.place(x=0,y=0,width=280,height=250)    
         #get the master password
-        config = MainConfigParser()
-        self.master_password = config.get('LOGIN', 'master_password')
+
+        self.master_password = GetConfigPaster('LOGIN', 'master_password')
         
         tk.Label(self, text="Master Password: ", font='arial 11').place(x=10,y=230)
         #input field for the master password
@@ -71,6 +70,7 @@ class LoginPage(tk.Frame):
             self.incorrect_password_alert.place(x=85,y=250)
             self.masterpass_entry.delete(0, 'end')
 
+
 class MenuPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
@@ -93,16 +93,9 @@ class MenuPage(tk.Frame):
                         command=lambda: self.controller.ShowFrame('DeleteAccountPage'))
         delete_account_button.place(x=66,y=310,width=150,height=30)
         
-        change_masterpass_button = tk.Button(self, text="Change Master Password", command = self.MasterPassChangeDialog)
-        change_masterpass_button.place(x=66,y=350,width=150,height=30)
-        
-    def MasterPassChangeDialog(self):
-        '''
-        Create a dialog that asks for the new master password
-        Change the saved master password according to the new master password
-        '''
-        new_mp = simpledialog.askstring('Change Master Password','Set a new master password:')
-        engine.ChangeMasterPass(new_mp)
+        settings_button = tk.Button(self, text="Settings", 
+                        command=lambda: self.controller.ShowFrame('SettingsPage'))
+        settings_button.place(x=66,y=350,width=150,height=30)        
 
 class AddAccountPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -130,8 +123,9 @@ class AddAccountPage(tk.Frame):
         self.password_entry = ttk.Entry(self, width=32)
         self.password_entry.pack()
 
-        pass_gen_button = ttk.Button(self, text="Generate Password", command = self.GeneratePassword)
+        pass_gen_button = ttk.Button(self, text="Generate Password", command = self.GeneratePass)
         pass_gen_button.pack()
+        self.password_generated = ''
 
         save_account_button = tk.Button(self, text="Save", width=20,height=2, command = self.AccSave)
         save_account_button.pack()        
@@ -177,21 +171,21 @@ class AddAccountPage(tk.Frame):
         self.DeleteEntries()
         self.controller.ShowFrame('DeleteAccountPage')
         
-    def GeneratePassword(self):
+    def GeneratePass(self):
         '''
         Generate a password and copy it to the clipboard
         '''
-        password = engine.GenerateSecurePassword()
+        self.password_generated = engine.GeneratePassword()
         self.password_entry.delete(0, tk.END)
-        self.password_entry.insert(0, password)
-        pyperclip.copy(password)
+        self.password_entry.insert(0, self.password_generated)
+        pyperclip.copy(self.password_generated)
         
     def AccSave(self):
         '''
         Put the content typed in the input field together as an Account and save the Account to the database.
         
         If not all the required information are provided, show error to the user.
-        If the password does not meet the standard requirements, notice the user
+        If the password the user typed in does not meet the standard requirements, notice the user. Don't show the alert if the password is generated
         '''
         #get the information from the input fields
         username = self.username_entry.get()
@@ -202,7 +196,7 @@ class AddAccountPage(tk.Frame):
             tk.messagebox.showerror(title="Insufficient information", message="Please fill in all the required fields")
         else:
             #if the password is not strong, notice the user
-            if not engine.MeetRequirements(password):
+            if not engine.MeetStandardRequirements(password) and self.password_generated!=password:
                 #if the user wish to proceed, save the password
                 if tk.messagebox.askyesno(title="Password not strong", 
                         message="The password does not meet the standard requirements and might be insecure. Do you wish to proceed?"):
@@ -318,6 +312,7 @@ class LoadAccountPage(tk.Frame):
                 self.password_field.insert(0,password)
                 pyperclip.copy(password)
      
+     
 class DeleteAccountPage(tk.Frame):
     def __init__(self, parent, controller):
         self.controller = controller
@@ -408,8 +403,139 @@ class DeleteAccountPage(tk.Frame):
                 if tk.messagebox.askokcancel(title="Account Deletion", 
                         message="This account will be deleted from the database, do you wish to proceed?"):
                     account.DeleteAccount()
+        
             
-     
+class SettingsPage(tk.Frame):
+    def __init__(self, parent, controller):
+        self.controller = controller
+        tk.Frame.__init__(self, parent)
+        
+        ttk.Label(self, text="Password Generator Settings", font= "Ariel 11").place(x=44,y=75)
+        
+        #for each type of characters, check against the config file for the initial state
+        
+        ttk.Label(self, text="Uppercase letters").place(x=45,y=117)
+        if eval(GetConfigPaster("PASSWORD_PREFERENCE", "upper")):
+            self.upper_characters_state_button = tk.Button(self, text='ON', width=10, command = self.UpperCharsStateButton)
+        else:
+            self.upper_characters_state_button = tk.Button(self, text='OFF', width=10, command = self.UpperCharsStateButton)
+        self.upper_characters_state_button.place(x=170,y=110,width=70,height=30)
+        
+        ttk.Label(self, text="Lowercase letters").place(x=45,y=147)
+        if eval(GetConfigPaster("PASSWORD_PREFERENCE", "lower")):
+            self.lower_characters_state_button = tk.Button(self, text='ON', width=10, command = self.LowerCharsStateButton)
+        else:
+            self.lower_characters_state_button = tk.Button(self, text='OFF', width=10, command = self.LowerCharsStateButton)
+        self.lower_characters_state_button.place(x=170,y=140,width=70,height=30)
+        
+        ttk.Label(self, text="Digits").place(x=45,y=177)
+        if eval(GetConfigPaster("PASSWORD_PREFERENCE", "digit")):
+            self.digits_state_button = tk.Button(self, text='ON', width=10, command = self.DigitsStateButton)
+        else:
+            self.digits_state_button = tk.Button(self, text='OFF', width=10, command = self.DigitsStateButton)
+        self.digits_state_button.place(x=170,y=170,width=70,height=30)
+        
+        ttk.Label(self, text="Special characters").place(x=45,y=207)
+        if eval(GetConfigPaster("PASSWORD_PREFERENCE", "special")):
+            self.special_characters_button = tk.Button(self, text='ON', width=10, command = self.SpecialCharactersStateButton)
+        else:
+            self.special_characters_button = tk.Button(self, text='OFF', width=10, command = self.SpecialCharactersStateButton)
+        self.special_characters_button.place(x=170,y=200,width=70,height=30)        
+        
+        ttk.Label(self, text="-------------------------------------------------------").place(x=0, y=250)
+        
+        change_masterpass_button = tk.Button(self, text="Change Master Password", command = self.MasterPassChangeDialog)
+        change_masterpass_button.place(x=66,y=280,width=150,height=30)
+                
+        home_button = tk.Button(self, text="Home", width=12,height=1,
+                        command = self.HomeButton)
+        home_button.place(x=0,y=0)              
+        
+    def HomeButton(self):
+        '''
+        Take the user back to the Menu Page
+        '''
+        self.controller.ShowFrame('MenuPage')      
+        
+    def PasswordGeneratorWarning(self):
+        '''
+        Notice the users that the password generator is going to generate a blank password if they leave all the buttons as "OFF"
+        
+        Returns:None
+        '''
+        alert = (self.upper_characters_state_button.config('text')[-1] == 'OFF' 
+                 and self.lower_characters_state_button.config('text')[-1] == 'OFF' 
+                 and self.digits_state_button.config('text')[-1] == 'OFF' 
+                 and self.special_characters_button.config('text')[-1] == 'OFF')
+        if alert:
+            tk.messagebox.showwarning(title="No characters for Password Generator", 
+                message="At least one type of characters needs to be allowed for the password generator to generate a password.")
+        
+    def UpperCharsStateButton(self):
+        '''
+        Change the state of the button for uppercase letters
+        Change the state of the value in the config file accordingly
+        Show warning if all password configuration buttons are left off
+        '''
+        if self.upper_characters_state_button.config('text')[-1] == 'ON':
+            self.upper_characters_state_button.config(text='OFF')
+            ChangeConfigPasterValue("PASSWORD_PREFERENCE", "upper", "False")
+            self.PasswordGeneratorWarning()
+        else:
+            self.upper_characters_state_button.config(text='ON')
+            ChangeConfigPasterValue("PASSWORD_PREFERENCE", "upper", "True")
+            
+    def LowerCharsStateButton(self):
+        '''
+        Change the state of the button for lowerrcase letters
+        Change the state of the value in the config file accordingly
+        Show warning if all password configuration buttons are left off
+        '''
+        if self.lower_characters_state_button.config('text')[-1] == 'ON':
+            self.lower_characters_state_button.config(text='OFF')
+            ChangeConfigPasterValue("PASSWORD_PREFERENCE", "lower", "False")
+            self.PasswordGeneratorWarning()
+        else:
+            self.lower_characters_state_button.config(text='ON')
+            ChangeConfigPasterValue("PASSWORD_PREFERENCE", "lower", "True")
+            
+    def DigitsStateButton(self):
+        '''
+        Change the state of the button for digits
+        Change the state of the value in the config file accordingly
+        Show warning if all password configuration buttons are left off
+        '''
+        if self.digits_state_button.config('text')[-1] == 'ON':
+            self.digits_state_button.config(text='OFF')
+            ChangeConfigPasterValue("PASSWORD_PREFERENCE", "digit", "False")
+            self.PasswordGeneratorWarning()
+        else:
+            self.digits_state_button.config(text='ON')
+            ChangeConfigPasterValue("PASSWORD_PREFERENCE", "digit", "True")
+            
+    def SpecialCharactersStateButton(self):
+        '''
+        Change the state of the button for special characters
+        Change the state of the value in the config file accordingly
+        Show warning if all password configuration buttons are left off
+        '''
+        if self.special_characters_button.config('text')[-1] == 'ON':
+            self.special_characters_button.config(text='OFF')
+            ChangeConfigPasterValue("PASSWORD_PREFERENCE", "special", "False")
+            self.PasswordGeneratorWarning()
+        else:
+            self.special_characters_button.config(text='ON')
+            ChangeConfigPasterValue("PASSWORD_PREFERENCE", "special", "True")
+        
+    def MasterPassChangeDialog(self):
+        '''
+        Create a dialog that asks for the new master password
+        Change the saved master password according to the new master password
+        '''
+        new_mp = simpledialog.askstring('Change Master Password','Set a new master password:')
+        ChangeConfigPasterValue("LOGIN","master_password",new_mp)          
+
+
 def main():
     MainWindow = PWControlApp()
     MainWindow.geometry("280x420")

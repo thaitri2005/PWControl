@@ -2,13 +2,11 @@ from Crypto.Cipher import AES
 from Crypto import Random
 import base64
 import hashlib
-from config_parser import MainConfigParser
+from config_parser import GetConfigPaster
 
-config = MainConfigParser()
-KEY = config.get('KEY', 'key')
+KEY = GetConfigPaster('ENCRYPTION_KEY', 'key')
 
 class AESCipher(object):
-
     def __init__(self, key): 
         self.bs = AES.block_size
         self.key = hashlib.sha256(key.encode()).digest()

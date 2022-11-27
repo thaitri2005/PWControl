@@ -1,6 +1,6 @@
 from os import urandom
-import string 
-from config_parser import MainConfigParser
+import string
+from config_parser import GetConfigPaster
 import json
 from encryption import EncryptPassword, DecryptPassword
 
@@ -54,7 +54,7 @@ class Account(object):
                 
     def GetPassword(self):
         '''
-        Load and decrypt the password of the Account from the datafile 
+        Load and decrypt the password of the Account from the data file 
         Return None if the password or Account is not found
         
         DATAFILE: path to where the Account(with encrypted password) is saved
@@ -85,9 +85,44 @@ class Account(object):
             with open(DATAFILE, "w") as data_file:
                 json.dump(data, data_file, indent=4)
 
+
 def MeetRequirements(password):
     '''
-    Check if the password meetsthe standard requirements
+    Check if the password meets the requirements in the configuration
+        
+    password: string
+    
+    Returns: bool
+    '''
+    specialchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'special'))
+    upperchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'upper'))
+    lowerchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'lower'))
+    digitchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'digit'))
+    
+    specialcharscount = 0
+    uppercharscount = 0
+    lowercharscount = 0
+    digitcharscount = 0
+    for character in password:
+        if character in special_characters:
+            specialcharscount +=1
+        elif character in upper_case_characters:
+            uppercharscount +=1
+        elif character in lower_case_characters:
+            lowercharscount +=1
+        elif character in digit_characters:
+            digitcharscount +=1
+    if ((specialcharscount > 0 or specialchars == False) 
+        and (uppercharscount > 0 or upperchars == False) 
+        and (lowercharscount > 0 or lowerchars == False) 
+        and (digitcharscount > 0 or digitchars == False)):
+        return True
+    else:
+        return False  
+    
+def MeetStandardRequirements(password):
+    '''
+    Check if the password meets the standard requirements
     
     Standard requirements: password must contains
         at least one special character,
@@ -99,53 +134,50 @@ def MeetRequirements(password):
     
     Returns: bool
     '''
-    specialchars = 0
-    upperchars = 0
-    lowerchars = 0
-    digitchars = 0
+    specialcharscount = 0
+    uppercharscount = 0
+    lowercharscount = 0
+    digitcharscount = 0
     for character in password:
         if character in special_characters:
-            specialchars +=1
+            specialcharscount +=1
         elif character in upper_case_characters:
-            upperchars+=1
+            uppercharscount +=1
         elif character in lower_case_characters:
-            lowerchars+=1
+            lowercharscount +=1
         elif character in digit_characters:
-            digitchars +=1
-    if specialchars > 0 and upperchars > 0 and lowerchars > 0 and digitchars > 0:
+            digitcharscount +=1
+    if specialcharscount > 0 and uppercharscount > 0 and lowercharscount > 0 and digitcharscount > 0:
         return True
     else:
         return False  
     
-def GenerateSecurePassword(size=SIZE):
+def GeneratePassword(size=SIZE):
     '''
-    Generade a password that meets the standard requirements
+    Generade a password that meets the requirements in the configuration
         
     size(int): the number of characters in the password generated
         
     Returns: string
     '''
-    chars = special_characters+upper_case_characters+lower_case_characters+digit_characters
+    specialchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'special'))
+    upperchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'upper'))
+    lowerchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'lower'))
+    digitchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'digit'))
+    chars = ''
+    if specialchars == True:
+        chars += special_characters
+    if upperchars == True:
+        chars += upper_case_characters
+    if lowerchars == True:
+        chars += lower_case_characters
+    if digitchars == True:
+        chars += digit_characters
     password =''
     while not MeetRequirements(password):
         password =  "".join(chars[c % len(chars)] for c in urandom(size))
     return password
-        
-def ChangeMasterPass(newMP):
-    '''
-    Change the master password
-    
-    newMP (string): the new master password
-    
-    Returns: nothing
-    '''
-    #load the config file location 
-    masterkeypaster = MainConfigParser.config["LOGIN"]
-    masterkeypaster["master_password"] = newMP
-    #write the new master password to the config file
-    with open('config.ini', 'w') as conf:
-        MainConfigParser.config.write(conf)
-        
+
 def GetAccountList(service):
     '''
     Get a list of accounts registered to a specific service in the data file
