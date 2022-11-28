@@ -195,17 +195,21 @@ class AddAccountPage(tk.Frame):
         if len(username) == 0 or len(service) == 0 or len(password) == 0:
             tk.messagebox.showerror(title="Insufficient information", message="Please fill in all the required fields")
         else:
+            account = engine.Account(service, username)
+            current_password = account.GetPassword()
+            #let the user know if there is already an account in the database with the same service and username
+            if current_password != None and current_password != password:
+                if not tk.messagebox.askyesno(title="Password Change", 
+                        message="There is already an account for this service with the same username in the database. Do you wish to proceed and change the password?"):
+                    return
             #if the password is not strong, notice the user
             if not engine.MeetStandardRequirements(password) and self.password_generated!=password:
                 #if the user wish to proceed, save the password
-                if tk.messagebox.askyesno(title="Password not strong", 
+                if not tk.messagebox.askyesno(title="Insecure Password", 
                         message="The password does not meet the standard requirements and might be insecure. Do you wish to proceed?"):
-                    account = engine.Account(service, username, password)
-                    account.SaveAccount()
-            #if the password is already strong, just save it
-            else:
-                account = engine.Account(service, username, password)
-                account.SaveAccount()
+                    return
+            account = engine.Account(service, username, password)
+            account.SaveAccount()                
         
 
 class LoadAccountPage(tk.Frame):
@@ -412,40 +416,47 @@ class SettingsPage(tk.Frame):
         
         ttk.Label(self, text="Password Generator Settings", font= "Ariel 11").place(x=44,y=75)
         
-        #for each type of characters, check against the config file for the initial state
+        ttk.Label(self, text="Password length:").place(x=45,y=117)
+        #Show the password length        
+        self.pass_length =  ttk.Label(self, text= GetConfigPaster('PASSWORD_PREFERENCE', 'pass_length'))
+        self.pass_length.place(x=140,y=117)
         
-        ttk.Label(self, text="Uppercase letters").place(x=45,y=117)
+        self.change_pass_length_button = tk.Button(self, text='CHANGE', width=10, command= self.PassLengthChangeFunction)
+        self.change_pass_length_button.place(x=170,y=110,width=70,height=30)
+
+        #for each type of characters, check against the config file for the initial state        
+        ttk.Label(self, text="Uppercase letters").place(x=45,y=167)
         if eval(GetConfigPaster("PASSWORD_PREFERENCE", "upper")):
             self.upper_characters_state_button = tk.Button(self, text='ON', width=10, command = self.UpperCharsStateButton)
         else:
             self.upper_characters_state_button = tk.Button(self, text='OFF', width=10, command = self.UpperCharsStateButton)
-        self.upper_characters_state_button.place(x=170,y=110,width=70,height=30)
+        self.upper_characters_state_button.place(x=170,y=160,width=70,height=30)
         
-        ttk.Label(self, text="Lowercase letters").place(x=45,y=147)
+        ttk.Label(self, text="Lowercase letters").place(x=45,y=197)
         if eval(GetConfigPaster("PASSWORD_PREFERENCE", "lower")):
             self.lower_characters_state_button = tk.Button(self, text='ON', width=10, command = self.LowerCharsStateButton)
         else:
             self.lower_characters_state_button = tk.Button(self, text='OFF', width=10, command = self.LowerCharsStateButton)
-        self.lower_characters_state_button.place(x=170,y=140,width=70,height=30)
+        self.lower_characters_state_button.place(x=170,y=190,width=70,height=30)
         
-        ttk.Label(self, text="Digits").place(x=45,y=177)
+        ttk.Label(self, text="Digits").place(x=45,y=227)
         if eval(GetConfigPaster("PASSWORD_PREFERENCE", "digit")):
             self.digits_state_button = tk.Button(self, text='ON', width=10, command = self.DigitsStateButton)
         else:
             self.digits_state_button = tk.Button(self, text='OFF', width=10, command = self.DigitsStateButton)
-        self.digits_state_button.place(x=170,y=170,width=70,height=30)
+        self.digits_state_button.place(x=170,y=220,width=70,height=30)
         
-        ttk.Label(self, text="Special characters").place(x=45,y=207)
+        ttk.Label(self, text="Special characters").place(x=45,y=257)
         if eval(GetConfigPaster("PASSWORD_PREFERENCE", "special")):
             self.special_characters_button = tk.Button(self, text='ON', width=10, command = self.SpecialCharactersStateButton)
         else:
             self.special_characters_button = tk.Button(self, text='OFF', width=10, command = self.SpecialCharactersStateButton)
-        self.special_characters_button.place(x=170,y=200,width=70,height=30)        
+        self.special_characters_button.place(x=170,y=250,width=70,height=30)        
         
-        ttk.Label(self, text="-------------------------------------------------------").place(x=0, y=250)
+        ttk.Label(self, text="-------------------------------------------------------").place(x=0, y=290)
         
         change_masterpass_button = tk.Button(self, text="Change Master Password", command = self.MasterPassChangeDialog)
-        change_masterpass_button.place(x=66,y=280,width=150,height=30)
+        change_masterpass_button.place(x=66,y=320,width=150,height=30)
                 
         home_button = tk.Button(self, text="Home", width=12,height=1,
                         command = self.HomeButton)
@@ -456,6 +467,19 @@ class SettingsPage(tk.Frame):
         Take the user back to the Menu Page
         '''
         self.controller.ShowFrame('MenuPage')      
+        
+    def PassLengthChangeFunction(self):
+        '''
+        Change the password length for the generator.
+        Show error if the password length is less than 4 and is insecure
+        Update the text showing the password length
+        '''
+        new_pass_length = simpledialog.askstring('Change Default Password Length','Set a new default password length:')
+        if int(new_pass_length) >=4:
+            ChangeConfigPasterValue("PASSWORD_PREFERENCE","pass_length",new_pass_length)
+            self.pass_length.config(text=GetConfigPaster('PASSWORD_PREFERENCE', 'pass_length'))
+        else:
+            tk.messagebox.showerror(title="Password too short", message="A password length of less than 4 is too vulnerable and is not allowed")
         
     def PasswordGeneratorWarning(self):
         '''

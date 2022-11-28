@@ -13,7 +13,7 @@ A simple password manager and password generator with an easy-to-use GUI. <br/>
 -Automatically copy the loaded passwords to the clipboard <br/>
 -Delete saved accounts <br/>
 -Generate passwords that meet most sites/services' requirements <br/>
--Generate custom passwords <br/>
+-Customize the passwords generated<br/>
 -Automatically copy generated passwords to the clipboard <br/>
 -AES encryption for saved passwords <br/>
 

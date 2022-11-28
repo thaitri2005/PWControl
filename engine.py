@@ -5,7 +5,6 @@ import json
 from encryption import EncryptPassword, DecryptPassword
 
 DATAFILE = "data.json"
-SIZE = 10
 special_characters ="!\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
 upper_case_characters = string.ascii_uppercase
 lower_case_characters = string.ascii_lowercase
@@ -129,6 +128,7 @@ def MeetStandardRequirements(password):
         at least one uppercase character,
         at least one lowercase character,
         at least one digit
+    Length of at least 6
         
     password: string
     
@@ -147,16 +147,14 @@ def MeetStandardRequirements(password):
             lowercharscount +=1
         elif character in digit_characters:
             digitcharscount +=1
-    if specialcharscount > 0 and uppercharscount > 0 and lowercharscount > 0 and digitcharscount > 0:
+    if specialcharscount > 0 and uppercharscount > 0 and lowercharscount > 0 and digitcharscount > 0 and len(password)>=6:
         return True
     else:
         return False  
     
-def GeneratePassword(size=SIZE):
+def GeneratePassword():
     '''
     Generade a password that meets the requirements in the configuration
-        
-    size(int): the number of characters in the password generated
         
     Returns: string
     '''
@@ -164,6 +162,7 @@ def GeneratePassword(size=SIZE):
     upperchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'upper'))
     lowerchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'lower'))
     digitchars = eval(GetConfigPaster('PASSWORD_PREFERENCE', 'digit'))
+    size = int(GetConfigPaster('PASSWORD_PREFERENCE', 'pass_length'))
     chars = ''
     if specialchars == True:
         chars += special_characters
