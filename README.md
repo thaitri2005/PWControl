@@ -6,8 +6,8 @@ A simple password manager and password generator with an easy-to-use GUI. <br/>
 <img src="logo.png" width="128" height="128" alt="scrcpy"/> <br/>
 
 ## Notable features:
--Protection with Master Password <br/>
--Change Master Password <br/>
+-Protection with Master Password that can be changed when needed<br/>
+-Database built with SQLite3<br/>
 -Save accounts <br/>
 -Load accounts to see the passwords <br/>
 -Automatically copy the loaded passwords to the clipboard <br/>
