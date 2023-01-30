@@ -200,7 +200,7 @@ class AddAccountPage(tk.Frame):
             #let the user know if there is already an account in the database with the same service and username
             if current_password != None and current_password != password:
                 if not tk.messagebox.askyesno(title="Password Change", 
-                        message="There is already an account for this service with the same username in the database. Do you wish to proceed and change the password?"):
+                        message="There is already an account for this service with the same username in the database. Do you wish to proceed and update the password?"):
                     return
             #if the password is not strong, notice the user
             if not engine.MeetStandardRequirements(password) and self.password_generated!=password:

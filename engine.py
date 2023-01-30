@@ -1,10 +1,10 @@
 from os import urandom
 import string
 from config_parser import GetConfigPaster
-import json
 from encryption import EncryptPassword, DecryptPassword
+import sqlite3
 
-DATAFILE = "data.json"
+DATAFILE = "database.db"
 special_characters ="!\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
 upper_case_characters = string.ascii_uppercase
 lower_case_characters = string.ascii_lowercase
@@ -28,61 +28,92 @@ class Account(object):
         
     def SaveAccount(self):
         '''
-        Encrypt the password and save the Account into the data file.
-        Create a new data file if the file is not found
+        Encrypt the password and save the Account into the database.
+        Update the password if there is an existing account with the same service and username.
+        Create a new database if the file is not found.
+        Create a new table if the Table is not found.
         
         DATAFILE: path to where the Account(with encrypted password) is saved
         
         Returns: nothing
         '''
-        new_data = {
-        self.service+' '+self.username:EncryptPassword(self.password)}
-        #try open the file and load the content
+        new_acc = (self.service,self.username,EncryptPassword(self.password))
         try:
-            with open(DATAFILE, "r") as data_file:
-                data = json.load(data_file)
-        #if the file is not found, create a new file and save the Account to it
-        except FileNotFoundError:
-            with open(DATAFILE, "w") as data_file:
-                json.dump(new_data, data_file, indent=4)
-        #if the file is at the specified location, update the file by including the new_data
-        else:
-            data.update(new_data)
-            with open(DATAFILE, "w") as data_file:
-                json.dump(data, data_file, indent=4)
+            connection = sqlite3.connect(DATAFILE)
+            cur = connection.cursor()
+            
+            cur.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='ACCOUNT' ''')
+            if cur.fetchone()[0]==1 : 
+                pass
+            else:
+                cur.execute("""CREATE TABLE ACCOUNT(
+                    service text,
+                    username text,
+                    password text)
+                            """)
+
+            if self.GetPassword() == None:
+                cur.executemany("INSERT INTO ACCOUNT (service, username, password) VALUES (?,?,?)", [new_acc])
+            else:
+                cur.execute("""UPDATE ACCOUNT SET password=(?) WHERE (service, username)=(?,?)""",[EncryptPassword(self.password),self.service,self.username])
+            connection.commit()
+            cur.close()
+
+        except sqlite3.Error as error:
+            print("Failed to save account. ", error)
+        finally:
+            if connection:
+                connection.close()
+        
                 
     def GetPassword(self):
         '''
-        Load and decrypt the password of the Account from the data file 
+        Load and decrypt the password of the Account from the database 
         Return None if the password or Account is not found
         
         DATAFILE: path to where the Account(with encrypted password) is saved
         
         Returns: string or None
         '''
-        with open(DATAFILE) as data_file:
-            data = json.load(data_file)
-            if self.service+' '+self.username in data:        
-                return DecryptPassword(data[self.service+' '+self.username])
+        try:
+            connection = sqlite3.connect(DATAFILE)
+            cursor = connection.cursor()
+
+            cursor.execute("""SELECT * FROM ACCOUNT WHERE (service,username) = (?,?)""", [self.service,self.username])
+            records = cursor.fetchall()
+            if len(records) == 1:
+                for row in records:
+                    return DecryptPassword(row[2])
             else:
                 return None
-            
+            cursor.close()
+
+        except sqlite3.Error as error:
+            print("Failed to read data. ", error)
+        finally:
+            if connection:
+                connection.close()
+                        
     def DeleteAccount(self):
         '''
-        Delete an account from the data file
+        Delete an account from the database
         
         DATAFILE: path to where the Account is saved
         
         Returns: nothing
         '''
-        dict_key = self.service+' '+self.username
-        with open(DATAFILE) as data_file:
-            data = json.load(data_file)
-            for key in list(data):
-                if dict_key in str(key):
-                    del data[dict_key]
-            with open(DATAFILE, "w") as data_file:
-                json.dump(data, data_file, indent=4)
+        try:
+            connection = sqlite3.connect(DATAFILE)
+            cursor = connection.cursor()
+            cursor.execute("""DELETE FROM ACCOUNT WHERE (service,username) = (?,?)""", [self.service,self.username])
+            connection.commit()
+            cursor.close()
+
+        except sqlite3.Error as error:
+            print("Failed to delete from database. ", error)
+        finally:
+            if connection:
+                connection.close()
 
 
 def MeetRequirements(password):
@@ -123,7 +154,7 @@ def MeetStandardRequirements(password):
     '''
     Check if the password meets the standard requirements
     
-    Standard requirements: password must contains
+    Standard requirements: password contains
         at least one special character,
         at least one uppercase character,
         at least one lowercase character,
@@ -179,46 +210,54 @@ def GeneratePassword():
 
 def GetAccountList(service):
     '''
-    Get a list of accounts registered to a specific service in the data file
+    Get a list of accounts registered to a specific service in the database
     
     service (string): the service entitled with the accounts
     DATAFILE: path to where the Accounts(with encrypted password) are saved
     
     Returns: list
     '''
-    account_list = []
-    with open(DATAFILE) as data_file:
-        data = json.load(data_file)
-        for key in list(data):
-            if service in str(key):
-                acc = str(key).replace(service,'').strip()
-                account_list.append(acc)
-    return account_list
+    acc_list = []
+    try:
+        connection = sqlite3.connect(DATAFILE)
+        cursor = connection.cursor()
+
+        cursor.execute("""SELECT * FROM ACCOUNT WHERE (service) = (?)""", [service])
+        records = cursor.fetchall()
+        for row in records:
+            acc_list.append(row[1])
+        cursor.close()
+        return acc_list
+
+    except sqlite3.Error as error:
+        print("Failed to read data. ", error)
+    finally:
+        if connection:
+            connection.close()
         
 def DeleteAllAccounts():
     '''
-    Delete all accounts saved in the data file
+    Delete all accounts saved in the database
     
     DATAFILE: path to where the Accounts(with encrypted password) are saved
     
     Returns: nothing
     '''
-    with open(DATAFILE, "w") as data_file:
-        json.dump({}, data_file)
+    connection = sqlite3.connect(DATAFILE)
+    connection.cursor().execute('DELETE FROM ACCOUNT;');		
+    connection.commit()
+    connection.close()
 
 def DeleteService(service):
     '''
-    Delete all accounts registered to a specific service in the data file
+    Delete all accounts registered to a specific service in the database
     
     service (string): the service entitled with the accounts that will be deleted
     DATAFILE: path to where the Accounts(with encrypted password) are saved
     
     Returns: nothing
     '''
-    with open(DATAFILE) as data_file:
-        data = json.load(data_file)
-        for key in list(data):
-            if service in str(key):
-                del data[key]
-        with open(DATAFILE, "w") as data_file:
-            json.dump(data, data_file, indent=4)
+    connection = sqlite3.connect(DATAFILE)
+    connection.cursor().execute("""DELETE FROM ACCOUNT WHERE (service)=(?);""",[service]);		
+    connection.commit()
+    connection.close()
